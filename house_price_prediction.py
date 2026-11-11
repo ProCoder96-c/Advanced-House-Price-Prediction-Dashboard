@@ -14,7 +14,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import warnings
 warnings.filterwarnings('ignore')
-print(data.columns)
 
 # Set random seed
 np.random.seed(42)
