@@ -6,6 +6,7 @@ import plotly.express as px
 import folium
 from streamlit_folium import st_folium
 from sklearn.metrics import r2_score, mean_absolute_error
+from sklearn.model_selection import train_test_split
 
 st.set_page_config(page_title="HouseAI", layout="wide")
 
@@ -107,17 +108,25 @@ st.metric("💰 Estimated Price", f"₹{prediction:,.0f}")
 st.subheader("📊 Model Performance")
 
 X = data.drop("Price", axis=1)
-y = np.log1p(data["Price"])
+y = data["Price"]
 
-X_scaled = scaler.transform(X)
-preds = model.predict(X_scaled)
+if uploaded_file:
+    # A custom upload was not used for training, so every row is unseen data.
+    X_eval, y_eval, eval_label = X, y, "uploaded data"
+else:
+    # Same 80/20 split as train_model.py, so only rows the model never saw are scored.
+    _, X_eval, _, y_eval = train_test_split(X, y, test_size=0.2, random_state=42)
+    eval_label = "held-out 20% test split"
 
-r2 = r2_score(y, preds)
-mae = mean_absolute_error(y, preds)
+preds = np.expm1(model.predict(scaler.transform(X_eval)))
 
+r2 = r2_score(y_eval, preds)
+mae = mean_absolute_error(y_eval, preds)
+
+st.caption(f"Scored on the {eval_label}, in original price units.")
 col1, col2 = st.columns(2)
 col1.metric("R² Score", f"{r2:.4f}")
-col2.metric("MAE", f"{mae:.4f}")
+col2.metric("MAE", f"{mae:,.0f}")
 
 # ==========================
 # VISUALS
